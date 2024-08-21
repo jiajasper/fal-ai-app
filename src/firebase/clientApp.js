@@ -4,7 +4,7 @@ import { getAuth } from "firebase/auth";
 import { getFirestore, doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyB5cYAvZSCFccxa4DfFOxoLNHZ7GTBHjKs",
+    apiKey: process.env.FIREBASE_API_KEY,
     authDomain: "focusdiff-55eaf.firebaseapp.com",
     projectId: "focusdiff-55eaf",
     storageBucket: "focusdiff-55eaf.appspot.com",
