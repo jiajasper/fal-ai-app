@@ -10,7 +10,6 @@ import { auth } from '../firebase/clientApp'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link';
 
-
 const sarala = Sarala({ 
   subsets: ['latin'],
   weight: ['400', '700'],
@@ -67,8 +66,8 @@ function NavBar() {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={sarala.variable}>
-      <AuthContextProvider>
-        <body className="font-sarala bg-white text-gray-900">
+      <body className="font-sarala bg-white text-gray-900">
+        <AuthContextProvider>
           <NavBar />
           <main className="container mx-auto px-4 py-8">
             {children}
@@ -78,8 +77,8 @@ export default function RootLayout({ children }) {
               <p>&copy; 2024 Animate Diff Space. All rights reserved.</p>
             </div>
           </footer>
-        </body>
-      </AuthContextProvider>
+        </AuthContextProvider>
+      </body>
     </html>
   )
 }
