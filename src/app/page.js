@@ -8,7 +8,7 @@ import { useAuth } from '../context/FirebaseAuthContext';
 import { updateUserCredits } from '../firebase/clientApp';
 
 fal.config({
-  credentials: process.env.FAL_KEY_SECRET,
+  credentials: process.env.FAL_KEY,
   proxyUrl: "/api/fal/proxy", // the built-in nextjs proxy
   // proxyUrl: 'http://localhost:3333/api/fal/proxy', // or your own external proxy
 });
