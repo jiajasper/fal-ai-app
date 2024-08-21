@@ -32,12 +32,12 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white py-6 px-4 sm:px-6 lg:px-8">
+    <div className="flex items-center justify-center bg-white mt-20 py-6 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-6">
         <div>
-          <h2 className="text-center text-3xl font-bold text-gray-900">
+          <h4 className="text-center text-3xl font-bold text-gray-900">
             Sign in to your account
-          </h2>
+          </h4>
         </div>
         <form className="mt-8 space-y-4" onSubmit={handleEmailLogin}>
           <div className="rounded-md shadow-sm -space-y-px">
