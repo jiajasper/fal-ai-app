@@ -1,5 +1,4 @@
 'use client'
-
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { withAuth } from '../components/ProtectedRoute';
 import * as fal from "@fal-ai/serverless-client";
@@ -9,8 +8,7 @@ import { updateUserCredits } from '../firebase/clientApp';
 
 fal.config({
   credentials: process.env.FAL_KEY,
-  proxyUrl: "/api/fal/proxy", // the built-in nextjs proxy
-  // proxyUrl: 'http://localhost:3333/api/fal/proxy', // or your own external proxy
+  proxyUrl: "/api/fal/proxy",
 });
 
 function Home() {
@@ -101,7 +99,6 @@ function Home() {
       setImageResult(result);
       setShowAnimationOptions(true);
 
-      // Deduct 1 credit and update Firestore
       if (user) {
         await updateUserCredits(user.uid, -1);
         await updateCredits();
@@ -144,7 +141,6 @@ function Home() {
       });
       setVideoResult(result);
 
-      // Deduct 4 credits and update Firestore
       if (user) {
         await updateUserCredits(user.uid, -4);
         await updateCredits();
@@ -156,59 +152,35 @@ function Home() {
     }
   };
 
-  const downloadImage = useCallback(async () => {
+  const downloadFile = useCallback(async (url, filename) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Error downloading:', error);
+      setError('Error downloading: ' + error.message);
+    }
+  }, []);
+
+  const downloadImage = useCallback(() => {
     if (image) {
-      if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-        // Mobile device
-        try {
-          const response = await fetch(image.url);
-          const blob = await response.blob();
-          const blobUrl = window.URL.createObjectURL(blob);
-
-          // Open in new tab for mobile devices
-          window.open(blobUrl, '_blank');
-        } catch (error) {
-          console.error('Error downloading image:', error);
-          setError('Error downloading image: ' + error.message);
-        }
-      } else {
-        // Desktop browsers - direct download
-        const link = document.createElement('a');
-        link.href = image.url;
-        link.download = 'generated-image.png';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
+      downloadFile(image.url, 'generated-image.png');
     }
-  }, [image]);
+  }, [image, downloadFile]);
 
-  const downloadVideo = useCallback(async () => {
+  const downloadVideo = useCallback(() => {
     if (videoResult && videoResult.video) {
-      if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-        // Mobile device
-        try {
-          const response = await fetch(videoResult.video.url);
-          const blob = await response.blob();
-          const blobUrl = window.URL.createObjectURL(blob);
-
-          // Open in new tab for mobile devices
-          window.open(blobUrl, '_blank');
-        } catch (error) {
-          console.error('Error downloading video:', error);
-          setError('Error downloading video: ' + error.message);
-        }
-      } else {
-        // Desktop browsers - direct download
-        const link = document.createElement('a');
-        link.href = videoResult.video.url;
-        link.download = 'animated-video.mp4';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
+      downloadFile(videoResult.video.url, 'animated-video.mp4');
     }
-  }, [videoResult]);
+  }, [videoResult, downloadFile]);
 
   const enhancePrompt = async () => {
     setEnhancing(true);
@@ -231,7 +203,6 @@ function Home() {
       setEnhancing(false);
     }
   };
-
 
   return (
     <div className="space-y-6">
