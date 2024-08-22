@@ -1,4 +1,3 @@
-// app/api/ai-enhance/route.js
 
 import { NextResponse } from 'next/server';
 
@@ -15,6 +14,7 @@ A well-crafted prompt typically includes the following components:
 6. Mood/Atmosphere: The emotional tone or ambiance of the image.
 7. Technical Details: Camera settings, perspective, or specific visual techniques.
 8. Additional Elements: Supporting details or background information.
+9. Always add keywords: in 4K quality, best artist, best quality, no compression
 
 If the user already provided some of the components, preserve them and enhance them, but never overwrite them. If the components are missing from user's prompt, you can be creative. Aim to expand the prompt to around 50-75 words, but prioritize quality over length. Your enhanced version should inspire more imaginative and higher-quality image generations. Provide only the enhanced prompt back, nothing else. Do not explain your prompt nor converse with the user`;
 
