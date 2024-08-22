@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { withAuth } from '../components/ProtectedRoute';
 import * as fal from "@fal-ai/serverless-client";
 import { Download } from "lucide-react";
@@ -26,8 +26,24 @@ function Home() {
   const [showAnimationOptions, setShowAnimationOptions] = useState(false);
   const [movementLevel, setMovementLevel] = useState(127);
   const [similarityLevel, setSimilarityLevel] = useState(0.02);
+  const [textareaHeight, setTextareaHeight] = useState('auto');
 
   const { user, credits, updateCredits } = useAuth();
+  const [enhancing, setEnhancing] = useState(false);
+
+  const textareaRef = useRef(null);
+
+  const adjustHeight = () => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+  };
+
+  useEffect(() => {
+    adjustHeight();
+  }, [prompt]);
 
   const image = useMemo(() => {
     if (!imageResult) return null;
@@ -140,37 +156,82 @@ function Home() {
     }
   };
 
-  const downloadImage = () => {
+  const downloadImage = useCallback(async () => {
     if (image) {
-      const link = document.createElement('a');
-      link.href = image.url;
-      link.download = 'generated-image.png';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        // Mobile device
+        try {
+          const response = await fetch(image.url);
+          const blob = await response.blob();
+          const blobUrl = window.URL.createObjectURL(blob);
+
+          // Open in new tab for mobile devices
+          window.open(blobUrl, '_blank');
+        } catch (error) {
+          console.error('Error downloading image:', error);
+          setError('Error downloading image: ' + error.message);
+        }
+      } else {
+        // Desktop browsers - direct download
+        const link = document.createElement('a');
+        link.href = image.url;
+        link.download = 'generated-image.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    }
+  }, [image]);
+
+  const downloadVideo = useCallback(async () => {
+    if (videoResult && videoResult.video) {
+      if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        // Mobile device
+        try {
+          const response = await fetch(videoResult.video.url);
+          const blob = await response.blob();
+          const blobUrl = window.URL.createObjectURL(blob);
+
+          // Open in new tab for mobile devices
+          window.open(blobUrl, '_blank');
+        } catch (error) {
+          console.error('Error downloading video:', error);
+          setError('Error downloading video: ' + error.message);
+        }
+      } else {
+        // Desktop browsers - direct download
+        const link = document.createElement('a');
+        link.href = videoResult.video.url;
+        link.download = 'animated-video.mp4';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    }
+  }, [videoResult]);
+
+  const enhancePrompt = async () => {
+    setEnhancing(true);
+    try {
+      const response = await fetch('/api/ai-enhance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt }),
+      });
+      const data = await response.json();
+      if (data.enhancedPrompt) {
+        setPrompt(data.enhancedPrompt);
+      }
+    } catch (error) {
+      console.error('Error enhancing prompt:', error);
+      setError('Failed to enhance the prompt');
+    } finally {
+      setEnhancing(false);
     }
   };
 
-  const downloadVideo = () => {
-    if (videoResult && videoResult.video) {
-      fetch(videoResult.video.url)
-        .then(response => response.blob())
-        .then(blob => {
-          const url = window.URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = 'animated-video.mp4';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(url);
-        })
-        .catch(error => {
-          console.error('Error downloading video:', error);
-          setError(error.message);
-        });
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -178,16 +239,42 @@ function Home() {
         <label htmlFor="prompt" className="block text-lg mb-2 font-semibold">
           Prompt
         </label>
-        <textarea
-          className="w-full bg-gray-100 text-gray-900 placeholder-gray-500 py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 transition duration-200 resize-none min-h-[120px]"
-          id="prompt"
-          name="prompt"
-          placeholder="Describe your image..."
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          onBlur={(e) => setPrompt(e.target.value.trim())}
-          rows="3"
-        />
+        <div className="relative">
+          <textarea
+            ref={textareaRef}
+            className="w-full bg-gray-100 text-gray-900 placeholder-gray-500 py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 transition duration-200 resize-none overflow-hidden"
+            style={{ height: textareaHeight }}
+            id="prompt"
+            name="prompt"
+            placeholder="Describe your image..."
+            value={prompt}
+            onChange={(e) => {
+              setPrompt(e.target.value);
+              adjustHeight();
+            }}
+            onBlur={(e) => setPrompt(e.target.value.trim())}
+          />
+          <div className="tooltip absolute bottom-1 mt-1">
+            <button
+              onClick={enhancePrompt}
+              disabled={enhancing || !prompt.trim()}
+              className="bg-blue-500 text-white rounded-full p-2 hover:bg-blue-600 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Enhance Prompt"
+            >
+              {enhancing ? (
+                <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+                </svg>
+              )}
+            </button>
+            <span className="tooltiptext">Enhance Prompt</span>
+          </div>
+        </div>
       </div>
       <div>
         <label htmlFor="imageSize" className="block text-lg mb-2 font-semibold">
@@ -301,11 +388,11 @@ function Home() {
         {videoResult && videoResult.video && (
           <div className="space-y-4">
             <div className="relative">
-              <video 
-                src={videoResult.video.url} 
-                autoPlay 
-                loop 
-                muted 
+              <video
+                src={videoResult.video.url}
+                autoPlay
+                loop
+                muted
                 playsInline
                 className="w-full rounded-lg shadow-lg"
               />
