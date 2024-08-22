@@ -47,3 +47,4 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Failed to enhance the prompt' }, { status: 500 });
     }
   }
+  export const runtime = 'edge'
